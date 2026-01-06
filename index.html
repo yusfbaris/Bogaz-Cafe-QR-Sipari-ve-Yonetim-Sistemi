@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Lezzet Durağı | Restoran Web Sitesi</title>
+    <link rel="stylesheet" href="styles/style.css"/>
+    <style>
+        /* Canlı Sepet Paneli İçin Ek Stiller */
+        .order-section-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            padding: 2rem 7%;
+            background-color: #0e0e0e;
+            align-items: flex-start;
+        }
+
+        /* GÜNCELLENEN UYARI METNİ STİLLERİ */
+        .order-warning-text {
+            width: 100%;
+            text-align: center;
+            color: #ffffff; /* Genel metin beyaz yapıldı */
+            font-size: 1.6rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            padding: 1.2rem;
+            background-color: rgba(255, 255, 255, 0.05); /* Arka plan daha koyu yapıldı */
+            border-radius: 1rem;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            display: block;
+        }
+
+        /* Sadece kırmızı kalmasını istediğin kısım */
+        .order-warning-text span {
+            color: #e84242;
+            font-weight: bold;
+        }
+
+        .order-warning-text i {
+            margin-right: 0.8rem;
+            color: #e84242; /* İkon kırmızı kalsın */
+        }
+
+        .table-selection {
+            flex: 1;
+            min-width: 300px;
+            padding: 0 !important;
+            border-bottom: none !important;
+        }
+
+        .live-cart-panel {
+            flex: 1;
+            min-width: 300px;
+            background: #fff;
+            padding: 2rem;
+            border-radius: 2rem;
+            box-shadow: 0 0 15px rgba(255,255,255,0.1);
+        }
+
+        .live-cart-panel h3 {
+            font-size: 2.2rem;
+            color: #0e0e0e;
+            border-bottom: 0.2rem solid #e84242;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+        }
+
+        #live-cart-items {
+            max-height: 25rem;
+            overflow-y: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        .live-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 0.1rem solid #eee;
+        }
+
+        .live-item-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .live-item-name {
+            font-size: 1.6rem;
+            color: #0e0e0e;
+            font-weight: 600;
+        }
+
+        .live-item-price {
+            font-size: 1.4rem;
+            color: #e84242;
+            font-weight: bold;
+        }
+
+        .empty-msg {
+            font-size: 1.5rem;
+            color: #666;
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        /* --- KAYDIRMALI BÖLÜMLER İÇİN STİLLER --- */
+        .slider-container {
+            display: flex !important;
+            overflow-x: auto;
+            gap: 2rem;
+            padding: 2rem 0;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .slider-container::-webkit-scrollbar {
+            height: 0.6rem;
+        }
+
+        .slider-container::-webkit-scrollbar-thumb {
+            background-color: #e84242;
+            border-radius: 1rem;
+        }
+
+        .slider-container::-webkit-scrollbar-track {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .slider-container .box {
+            flex: 0 0 32rem; 
+            min-width: 32rem;
+        }
+
+        @media (max-width: 768px) {
+            .order-section-container {
+                flex-direction: column;
+            }
+            .table-selection, .live-cart-panel {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <a href="#home" class="logo">
+            <img src="images/yeni.png" alt="logo" />
+        </a>
+        
+        <nav class="navbar">
+            <a href="#home">Ana Sayfa</a>
+            <a href="#about">Hakkımızda</a>
+            <a href="#menu">Menü</a>
+            <a href="#products">Ürünler</a>
+            <a href="#review">Yorumlar</a>
+            <a href="#contact">İletişim</a>
+            
+            <a href="masalar.html" class="panel-link only-sidebar"><i class="fas fa-utensils"></i> Kafe (Garson)</a>
+            <a href="admin.html" class="panel-link only-sidebar"><i class="fas fa-user-shield"></i> Admin</a>
+        </nav>
+
+        <div class="buttons">
+            <button id="search-btn">
+                <i class="fas fa-search"></i>
+            </button>
+            <button id="cart-btn">
+                <i class="fas fa-shopping-cart"></i>
+            </button>
+            <button id="menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <div class="search-form">
+            <input type="text" class="search-input" id="search-box" placeholder="Burada arayın..." />
+            <i class="fas fa-search"></i>
+        </div>
+
+        <div class="cart-items-container">
+            <a href="#" class="btn checkout-btn" id="main-checkout-btn">Şimdi Sipariş Ver</a>
+        </div>
+    </header>
+
+    <div class="order-section-container">
+        <p class="order-warning-text">
+            <i class="fas fa-info-circle"></i> 
+            Siparişinizi buradan vermek istiyorsanız lütfen önce <span>masanızı seçip</span> ardından ürün ekleyin.
+        </p>
+
+        <section class="table-selection">
+            <div class="table-container">
+                <h3><i class="fas fa-chair"></i> Lütfen Masanızı Seçiniz</h3>
+                <select id="table-no" class="table-select-box">
+                    <option value="default" disabled selected>Masa Seçin...</option>
+                    <option value="Masa 1">Masa 1</option>
+                    <option value="Masa 2">Masa 2</option>
+                    <option value="Masa 3">Masa 3</option>
+                    <option value="Masa 4">Masa 4</option>
+                    <option value="Masa 5">Masa 5</option>
+                    <option value="Masa 6">Masa 6</option>
+                    <option value="Masa 7">Masa 7</option>
+                    <option value="Masa 8">Masa 8</option>
+                    <option value="Masa 9">Masa 9</option>
+                    <option value="Masa 10">Masa 10</option>
+                </select>
+            </div>
+        </section>
+
+        <div class="live-cart-panel">
+            <h3><i class="fas fa-shopping-basket"></i> Sipariş Özetiniz</h3>
+            <div id="live-cart-items">
+                <p class="empty-msg">Sepetiniz henüz boş...</p>
+            </div>
+            <button id="live-checkout-btn" class="btn" style="width: 100%; border-radius: 1rem; margin-top: 0;">Siparişi Onayla (0.00 TL)</button>
+        </div>
+    </div>
+E
+    <section class="home" id="home">
+        <div class="content">
+            <h3>BOĞAZ CAFE</h3>
+            <p>"En taze kahve çekirdekleri ve en kaliteli malzemelerle hazırlanan eşsiz lezzetlerimizle tanışın. Gerçek Osmanlı kahvesinden geleneksel tatlılara, özel tarifli ürünlerimizle gerçek bir kafe deneyimi kapınıza geliyor."</p>
+            <a href="#menu" class="btn"> Şimdi Sipariş Ver</a>   
+        </div>
+    </section>      
+
+    <section class="menu" id="menu">
+        <h1 class="heading">Bizim<span> Menümüz</span></h1>
+        <div class="box-container" id="menu-container">
+            <div class="box">
+                <div class="box-head">
+                    <img src="images/menu-1.png" alt="menu">
+                    <span class="menu-category">PİZZA</span>
+                    <h3>6'lı Mini Pizza Paketi</h3>
+                    <div class="price">104.99 TL <span>119.99 TL</span></div>
+                </div>
+                <div class="box-bottom">
+                    <a href="#" class="btn add-to-cart-btn"> Sepete Ekle</a>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <img src="images/menu-2.png" alt="menu">
+                    <span class="menu-category">BURGER</span>
+                    <h3>5'li Mini Burger Menü</h3>
+                    <div class="price">99.99 TL <span>109.99 TL</span></div>
+                </div>
+                <div class="box-bottom">
+                    <a href="#" class="btn add-to-cart-btn"> Sepete Ekle</a>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <img src="images/menu-3.png" alt="menu">
+                    <span class="menu-category">PİZZA</span>
+                    <h3>2'li Karışık Pizza</h3>
+                    <div class="price">49.99 TL <span>59.99 TL</span></div>
+                </div>
+                <div class="box-bottom">
+                    <a href="#" class="btn add-to-cart-btn"> Sepete Ekle</a>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <img src="images/menu-4.png" alt="menu">
+                    <span class="menu-category">BURGER</span>
+                    <h3>3'lü Köfte Burger</h3>
+                    <div class="price">79.99 TL <span>109.99 TL</span></div>
+                </div>
+                <div class="box-bottom">
+                    <a href="#" class="btn add-to-cart-btn"> Sepete Ekle</a>
+                </div>
+            </div>
+        </div>
+    </section>   
+
+    <section class="products" id="products">
+        <h1 class="heading">Öne Çıkan <span>Ürünler</span></h1>
+        <div class="box-container" id="featured-container">
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">MİNİ BURGER</span>
+                    <a href="#" class="name">Pastırmalı Burger</a>
+                </div>
+                <div class="image">
+                    <img src="images/product-1.png" alt=""/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">120.00 TL</b>
+                        <span class="amount">110gr / 300kal</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">MİNİ BURGER</span>
+                    <a href="#" class="name">Klasik Burger</a>
+                </div>
+                <div class="image">
+                    <img src="images/product-2.png" alt=""/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">110.00 TL</b>
+                        <span class="amount">110gr / 300kal</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="box dark-bg">
+                <div class="box-head">
+                    <span class="title">MİNİ BURGER</span>
+                    <a href="#" class="name">Özel Soslu Burger</a>
+                </div>
+                <div class="image">
+                    <img src="images/dark-product.jpg" alt=""/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">135.00 TL</b>
+                        <span class="amount">110gr / 300kal</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="products" id="desserts">
+        <h1 class="heading">Nefis <span>Tatlılar</span></h1>
+        <div class="box-container slider-container" id="desserts-container">
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">TATLILAR</span>
+                    <a href="#" class="name">Çikolatalı Sufle</a>
+                </div>
+                <div class="image">
+                    <img src="images/dessert-1.png" alt="Sufle"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">120.00 TL</b>
+                        <span class="amount">Sıcak Servis</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">TATLILAR</span>
+                    <a href="#" class="name">Fıstıklı Baklava</a>
+                </div>
+                <div class="image">
+                    <img src="images/dessert-2.png" alt="Baklava"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">180.00 TL</b>
+                        <span class="amount">4 Dilim</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">TATLILAR</span>
+                    <a href="#" class="name">Çilekli Cheesecake</a>
+                </div>
+                <div class="image">
+                    <img src="images/dessert-3.png" alt="Cheesecake"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">145.00 TL</b>
+                        <span class="amount">Taze Çilekli</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">TATLILAR</span>
+                    <a href="#" class="name">Muzlu Magnolia</a>
+                </div>
+                <div class="image">
+                    <img src="images/dessert-4.png" alt="Magnolia"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">110.00 TL</b>
+                        <span class="amount">Muzlu/Bisküvili</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">TATLILAR</span>
+                    <a href="#" class="name">Orijinal Tiramisu</a>
+                </div>
+                <div class="image">
+                    <img src="images/dessert-5.png" alt="Tiramisu"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">130.00 TL</b>
+                        <span class="amount">Kedi Dilli</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="products" id="hot-drinks">
+        <h1 class="heading">Sıcak <span>İçecekler</span></h1>
+        <div class="box-container slider-container" id="hot-drinks-container">
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">SICAK İÇECEK</span>
+                    <a href="#" class="name">Türk Kahvesi</a>
+                </div>
+                <div class="image">
+                    <img src="images/drink-2.png" alt="Türk Kahvesi"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">50.00 TL</b>
+                        <span class="amount">Lokum İle Servis</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">SICAK İÇECEK</span>
+                    <a href="#" class="name">Caffè Latte</a>
+                </div>
+                <div class="image">
+                    <img src="images/drink-4.png" alt="Latte"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">70.00 TL</b>
+                        <span class="amount">Yoğun Sütlü</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">SICAK İÇECEK</span>
+                    <a href="#" class="name">Bitki Çayı</a>
+                </div>
+                <div class="image">
+                    <img src="images/hot-drink-1.png" alt="Çay"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">40.00 TL</b>
+                        <span class="amount">Taze Demleme</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="products" id="cold-drinks">
+        <h1 class="heading">Soğuk <span>İçecekler</span></h1>
+        <div class="box-container slider-container" id="cold-drinks-container">
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">SOĞUK İÇECEK</span>
+                    <a href="#" class="name">Ev Yapımı Limonata</a>
+                </div>
+                <div class="image">
+                    <img src="images/drink-1.png" alt="Limonata"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">45.00 TL</b>
+                        <span class="amount">Naneli & Buzlu</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">SOĞUK İÇECEK</span>
+                    <a href="#" class="name">Çilekli Milkshake</a>
+                </div>
+                <div class="image">
+                    <img src="images/drink-3.png" alt="Milkshake"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">85.00 TL</b>
+                        <span class="amount">Taze Çilekli</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">SOĞUK İÇECEK</span>
+                    <a href="#" class="name">Taze Portakal Suyu</a>
+                </div>
+                <div class="image">
+                    <img src="images/drink-5.png" alt="Portakal Suyu"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">65.00 TL</b>
+                        <span class="amount">%100 Doğal</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-head">
+                    <span class="title">SOĞUK İÇECEK</span>
+                    <a href="#" class="name">Buzlu Çay (Ice Tea)</a>
+                </div>
+                <div class="image">
+                    <img src="images/cold-drink-1.png" alt="Ice Tea"/>
+                </div>
+                <div class="box-bottom">
+                    <div class="info">
+                        <b class="price">45.00 TL</b>
+                        <span class="amount">Şeftali / Limon</span>
+                    </div>
+                    <div class="product-btn">
+                        <a href="#" class="add-to-cart-btn"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="about" id="about">
+        <h1 class="heading">Hakkımızda <span>Biz</span></h1>
+        <div class="row">
+            <div class="image">
+                <img src="images/osmanlıcafe1.png" alt="about" />
+            </div>
+            <div class="content">
+                <h3>İstanbul’un Işıltısı, Saray İhtişamıyla Buluşuyor</h3>
+                <p>Boğaz Cafe, İstanbul’un eşsiz manzarasını saray ihtişamıyla birleştiren özel bir kaçış noktasıdır. Kristal avizelerin ışıltısı ve denizin huzuru eşliğinde, misafirlerimize sadece bir kafe deneyimi değil, unutulmaz bir atmosfer sunuyoruz.
+
+Özenle hazırlanan gurme lezzetlerimiz ve seçkin servis anlayışımızla, kaliteden ödün vermeden her anınızı bir seremoniye dönüştürüyoruz. Şehrin en prestijli noktasında, kendinizi özel hissedeceğiniz bir mola için sizleri bekliyoruz.</p>
+                <a href="#" class="btn">Daha Fazla Bilgi</a>
+            </div>
+        </div>
+    </section>
+
+    
+    <section class="contact" id="contact">
+        <h1 class="heading">Bize <span>Ulaşın</span></h1>
+        <div class="row">
+            <iframe class="map" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d193595.15830869428!2d-74.119763973046!3d40.69766374874431!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c24fa5d33f083b%3A0xc80b8f06e177fe62!2sNew%20York%2C%20NY%2C%20USA!5e0!3m2!1sen!2str!4v1641370000000!5m2!1sen!2str" loading="lazy"></iframe>
+            <form action="">
+                <h3>İletişime Geçin</h3>
+                <div class="inputBox">
+                    <i class="fas fa-user"></i>
+                    <input type="text" placeholder="Adınız">
+                </div>
+                <div class="inputBox">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" placeholder="E-posta">
+                </div>
+                <div class="inputBox">
+                    <i class="fas fa-phone"></i>
+                    <input type="number" placeholder="Telefon Numaranız">
+                </div>
+                <input type="submit" class="btn" value="Şimdi Gönder"/>
+            </form>
+        </div>
+    </section>
+
+    <section class="footer">
+        <div class="search">
+            <input type="text" class="search-input" placeholder="Arama yapın..." />
+            <button class="btn btn-primary">Ara</button>
+        </div>
+        <div class="share">
+            <a href="#" class="fab fa-facebook-f"></a>
+            <a href="#" class="fab fa-twitter"></a>
+            <a href="#" class="fab fa-instagram"></a>
+            <a href="#" class="fab fa-linkedin"></a>
+            <a href="#" class="fab fa-pinterest"></a>
+        </div>
+        <div class="links">
+            <a href="#home">Ana Sayfa</a>
+            <a href="#about">Hakkımızda</a>
+            <a href="#menu">Menü</a>
+            <a href="#products">Ürünler</a>
+            <a href="#review">Yorumlar</a>
+            <a href="#contact">İletişim</a>
+        </div>
+        <div class="credit">
+            <span>// YUSUF BARIŞ //</span>
+        </div>
+    </section>
+
+    <script src="js/script.js"></script>
+
+</body>
+</html>
+

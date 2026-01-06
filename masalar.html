@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garson Paneli - Masalar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { 
+            background-color: #111; 
+            color: white; 
+            font-family: 'Poppins', sans-serif; 
+            text-align: center; 
+            padding: 40px; 
+            margin: 0;
+        }
+
+        .header h1 { 
+            color: #ff4d4d; 
+            margin-bottom: 10px; 
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            color: #888;
+            margin-bottom: 40px;
+        }
+
+        .container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 25px; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+
+        /* --- VARSAYILAN: BOŞ MASA STİLLERİ (YEŞİL) --- */
+        .masa-kutu { 
+            background: #0a140a; 
+            border: 2px solid #2ecc71 !important; 
+            border-radius: 20px; 
+            padding: 35px 15px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1;
+        }
+
+        .masa-kutu i { 
+            font-size: 40px; 
+            color: #2ecc71 !important; 
+            margin-bottom: 15px; 
+        }
+
+        .masa-kutu .durum { 
+            font-size: 15px; 
+            margin-top: 10px; 
+            color: #2ecc71 !important; 
+            font-weight: bold;
+        }
+
+        /* --- AKTİF: DOLU MASA STİLLERİ (KIRMIZI) --- */
+        .masa-kutu.dolu { 
+            background: #221111 !important;
+            border-color: #ff4d4d !important; 
+            box-shadow: 0 0 20px rgba(255, 77, 77, 0.3);
+        }
+
+        /* Yeni sipariş geldiğinde yanıp sönme efekti */
+        .masa-kutu.bekliyor {
+            animation: pulse-border 1.5s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0px rgba(255, 77, 77, 0.7); }
+            100% { box-shadow: 0 0 0 15px rgba(255, 77, 77, 0); }
+        }
+
+        .masa-kutu.dolu i { 
+            color: #ff4d4d !important; 
+        }
+
+        .masa-kutu.dolu .durum { 
+            color: #ff4d4d !important; 
+        }
+
+        .masa-no { 
+            font-size: 20px; 
+            font-weight: bold; 
+            color: white;
+        }
+
+        .masa-kutu.aktif-detay {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .gecen-sure {
+            font-size: 13px;
+            color: #ff9f43; 
+            margin-top: 5px; 
+            font-weight: bold;
+            display: none; 
+        }
+
+        .masa-kutu.dolu .gecen-sure {
+            display: block;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-icerik {
+            background-color: #1a1a1a;
+            margin: 10% auto;
+            padding: 30px;
+            border: 1px solid #ff4d4d;
+            border-radius: 25px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 0 40px rgba(255, 77, 77, 0.3);
+            animation: modalAcilma 0.3s ease-out;
+            text-align: left;
+        }
+
+        @keyframes modalAcilma {
+            from { transform: scale(0.7); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-ust {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .modal-ust h2 { color: #ff4d4d; font-size: 24px; margin: 0; }
+
+        .modal-kapat {
+            color: #888;
+            font-size: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .modal-kapat:hover { color: #ff4d4d; }
+
+        .modal-urun-listesi {
+            margin-bottom: 25px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .modal-urun-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #222;
+            font-size: 16px;
+        }
+
+        .modal-urun-item strong { color: #ff4d4d; }
+
+        .modal-alt {
+            border-top: 1px solid #333;
+            padding-top: 15px;
+        }
+
+        .modal-toplam { font-size: 22px; font-weight: bold; color: #fff; }
+        .modal-toplam span { color: #ff4d4d; }
+        .modal-saat { color: #666; font-size: 14px; margin-top: 5px; }
+
+        .siparis-onay-alan { display: none; border-top: 1px solid #444; margin-top: 15px; padding-top: 15px; width: 100%; }
+        .onay-butonlar { display: flex; gap: 15px; justify-content: center; }
+        .btn-aksiyon { background: transparent; border: 2px solid; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: 0.2s; }
+        .btn-aksiyon.tamam { color: #2ecc71; border-color: #2ecc71; }
+        .btn-aksiyon.iptal { color: #ff4d4d; border-color: #ff4d4d; }
+        .btn-temizle { margin-top: 20px; padding: 10px 18px; background: #ff4d4d; border: none; color: white; border-radius: 12px; cursor: pointer; display: none; font-size: 14px; font-weight: bold; }
+        
+        .header-top-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        
+        .btn-logout {
+            padding: 8px 20px;
+            color: #ff4d4d;
+            border: 1px solid #ff4d4d;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.3s;
+            background: transparent;
+            cursor: pointer;
+        }
+        .btn-logout:hover { background: #ff4d4d; color: white; }
+
+        .ana-sayfa-btn { margin-top: 60px; display: inline-block; padding: 12px 35px; color: #ff4d4d; text-decoration: none; border: 2px solid #ff4d4d; border-radius: 30px; font-weight: bold; transition: 0.3s; }
+        .ana-sayfa-btn:hover { background: #ff4d4d; color: white; }
+
+        @media (max-width: 900px) { .container { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+
+    <script>
+        // YENİ: Garson Yetki Kontrolü
+        if (sessionStorage.getItem('garson_auth') !== 'true') {
+            window.location.href = 'login.html?to=garson';
+        }
+    </script>
+
+    <div class="header-top-buttons">
+        <button class="btn-logout" onclick="logout()">Güvenli Çıkış</button>
+    </div>
+
+    <div class="header">
+        <h1><i class="fas fa-utensils"></i> GARSON PANELİ</h1>
+        <p id="garson-karsilama">Hoş geldiniz! Siparişleri anlık olarak yönetebilirsiniz.</p>
+    </div>
+
+    <div class="container" id="tables-container"></div>
+
+    <div id="siparis-modal" class="modal">
+        <div class="modal-icerik">
+            <div class="modal-ust">
+                <h2 id="modal-masa-adi">Masa Detayı</h2>
+                <span class="modal-kapat" onclick="modalKapat()">&times;</span>
+            </div>
+            <div id="modal-urunler" class="modal-urun-listesi"></div>
+            <div class="modal-alt">
+                <div class="modal-toplam">Toplam: <span id="modal-toplam-tutar">0.00</span> TL</div>
+                <div id="modal-siparis-saati" class="modal-saat">Sipariş Saati: 00:00</div>
+            </div>
+        </div>
+    </div>
+
+    <a href="index.html" class="ana-sayfa-btn">Ana Sayfaya Dön</a>
+
+    <script>
+        const aktifGarson = sessionStorage.getItem('aktif_garson');
+        if (aktifGarson) {
+            document.getElementById('garson-karsilama').innerText = "Hoş geldin " + aktifGarson + "! Siparişleri yönetmeye hazırsın.";
+        }
+
+        function logout() {
+            sessionStorage.removeItem('garson_auth');
+            sessionStorage.removeItem('aktif_garson');
+            window.location.href = 'index.html';
+        }
+
+        function modalAc(siparis, masaID, masaElement) {
+            document.querySelectorAll('.masa-kutu').forEach(m => m.classList.remove('aktif-detay'));
+            masaElement.classList.add('aktif-detay');
+
+            document.getElementById('siparis-modal').style.display = "block";
+            document.getElementById('modal-masa-adi').innerText = masaID + " Detayı";
+            document.getElementById('modal-toplam-tutar').innerText = siparis.total.toFixed(2);
+            document.getElementById('modal-siparis-saati').innerText = "Son Sipariş: " + siparis.time;
+
+            const liste = document.getElementById('modal-urunler');
+            liste.innerHTML = ""; 
+            siparis.items.forEach(item => {
+                liste.innerHTML += `
+                    <div class="modal-urun-item">
+                        <span>${item.name} <strong>(x${item.quantity})</strong></span>
+                        <span>${(item.price * item.quantity).toFixed(2)} TL</span>
+                    </div>`;
+            });
+        }
+
+        function modalKapat() { 
+            document.getElementById('siparis-modal').style.display = "none"; 
+            document.querySelectorAll('.masa-kutu').forEach(m => m.classList.remove('aktif-detay'));
+        }
+
+        window.onclick = function(e) { if (e.target == document.getElementById('siparis-modal')) modalKapat(); }
+
+        function panelGuncelle() {
+            const container = document.getElementById('tables-container');
+            const orders = JSON.parse(localStorage.getItem("orders")) || [];
+            const masalar = JSON.parse(localStorage.getItem("kafe_masalari")) || [];
+            
+            if (masalar.length === 0) {
+                for (let i = 1; i <= 10; i++) masalar.push("Masa " + i);
+            }
+
+            container.innerHTML = "";
+
+            masalar.forEach(masaID => {
+                const siparis = orders.find(o => o.table.trim() === masaID.trim());
+                
+                const masaDiv = document.createElement('div');
+                
+                // Statüye göre ekstra class ekle (parlama efekti için)
+                let extraClass = "";
+                if (siparis && siparis.status === "bekliyor") {
+                    extraClass = " bekliyor";
+                }
+
+                masaDiv.className = siparis ? 'masa-kutu dolu' + extraClass : 'masa-kutu';
+                masaDiv.setAttribute('data-id', masaID);
+                
+                let gecenSureHTML = "";
+                if (siparis && siparis.startTime) {
+                    const fark = Date.now() - siparis.startTime;
+                    const dk = Math.floor(fark / 60000);
+                    const sn = Math.floor((fark % 60000) / 1000);
+                    gecenSureHTML = `${dk} dk ${sn} sn`;
+                }
+
+                masaDiv.innerHTML = `
+                    <i class="fas fa-chair"></i>
+                    <span class="masa-no">${masaID}</span>
+                    <span class="durum">${siparis ? (siparis.status === "bekliyor" ? "YENİ SİPARİŞ" : "DOLU") : "Boş"}</span>
+                    <span class="gecen-sure">${gecenSureHTML}</span>
+                    <div class="siparis-onay-alan" style="display: ${siparis && siparis.status === 'bekliyor' ? 'block' : 'none'}">
+                        <div class="onay-butonlar">
+                            <button class="btn-aksiyon tamam" onclick="siparisOnayla(event, '${masaID}')">✓</button>
+                            <button class="btn-aksiyon iptal" onclick="siparisIptal(event, '${masaID}')">X</button>
+                        </div>
+                    </div>
+                    <button class="btn-temizle" style="display: none" onclick="masayiBosalt(event, '${masaID}')">Hesabı Kapat</button>
+                `;
+
+                if (siparis) {
+                    masaDiv.onclick = () => modalAc(siparis, masaID, masaDiv);
+                }
+
+                container.appendChild(masaDiv);
+            });
+        }
+
+        function siparisOnayla(event, masaID) {
+            event.stopPropagation();
+            let orders = JSON.parse(localStorage.getItem("orders")) || [];
+            orders = orders.map(o => o.table.trim() === masaID.trim() ? { ...o, status: "onaylandi" } : o);
+            localStorage.setItem("orders", JSON.stringify(orders));
+            panelGuncelle();
+        }
+
+        function siparisIptal(event, masaID) {
+            event.stopPropagation();
+            if(confirm(masaID + " siparişi iptal edilsin mi?")) {
+                let orders = JSON.parse(localStorage.getItem("orders")) || [];
+                // Not: Sipariş tamamen silinmez, sadece bekleyen durumdan çıkarılırsa daha güvenli olur
+                // Ancak senin yapında direkt filtreleme var, bozmadan devam ediyorum
+                localStorage.setItem("orders", JSON.stringify(orders.filter(o => o.table.trim() !== masaID.trim())));
+                panelGuncelle();
+            }
+        }
+
+        function masayiBosalt(event, masaID) {
+            event.stopPropagation(); 
+            if(confirm(masaID + " hesabı kapatılsın mı?")) {
+                let orders = JSON.parse(localStorage.getItem("orders")) || [];
+                localStorage.setItem("orders", JSON.stringify(orders.filter(o => o.table.trim() !== masaID.trim())));
+                panelGuncelle();
+            }
+        }
+
+        panelGuncelle();
+        setInterval(panelGuncelle, 1000);
+    </script>
+</body>
+</html>

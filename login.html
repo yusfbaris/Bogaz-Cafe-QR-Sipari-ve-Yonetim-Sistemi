@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap - Lezzet Durağı</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #0e0e0e; color: white; font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: #1a1a1a; padding: 40px; border-radius: 20px; border: 1px solid #e84242; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(232, 66, 66, 0.2); }
+        .login-card h2 { color: #e84242; margin-bottom: 30px; font-size: 2rem; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 8px; color: #888; font-size: 1.4rem; }
+        .input-group input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0e0e0e; color: white; outline: none; box-sizing: border-box; }
+        .btn-login { width: 100%; padding: 15px; border-radius: 30px; border: none; background: #e84242; color: white; font-size: 1.6rem; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-login:hover { opacity: 0.9; transform: scale(1.02); }
+        .error-msg { color: #ff4d4d; margin-top: 15px; display: none; font-size: 1.3rem; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <h2 id="login-title">Panel Girişi</h2>
+        <div class="input-group">
+            <label>Kullanıcı Adı</label>
+            <input type="text" id="username" placeholder="Kullanıcı adınızı girin">
+        </div>
+        <div class="input-group">
+            <label>Şifre</label>
+            <input type="password" id="password" placeholder="Şifrenizi girin">
+        </div>
+        <button class="btn-login" onclick="checkLogin()">Giriş Yap</button>
+        <p id="error" class="error-msg">Hatalı kullanıcı adı veya şifre!</p>
+    </div>
+
+    <script>
+        // URL'den hedef paneli alıyoruz (?to=admin veya ?to=garson)
+        const params = new URLSearchParams(window.location.search);
+        const target = params.get('to'); 
+
+        if(target === 'admin') {
+            document.getElementById('login-title').innerText = "Admin Girişi";
+        } else {
+            document.getElementById('login-title').innerText = "Garson Girişi";
+        }
+
+        function checkLogin() {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+            const error = document.getElementById('error');
+            error.style.display = 'none';
+
+            if (target === 'admin') {
+                // Admin sabit girişi
+                if (u === 'admin' && p === '1234') {
+                    sessionStorage.setItem('admin_auth', 'true');
+                    window.location.href = 'admin.html';
+                } else {
+                    error.style.display = 'block';
+                }
+            } 
+            else {
+                // Dinamik Garson Girişi (Admin sayfasından eklenenler)
+                const garsonlar = JSON.parse(localStorage.getItem("kafe_garsonlari")) || [];
+                
+                // Kullanıcı adı ve şifre eşleşmesini kontrol et
+                const garson = garsonlar.find(g => g.isim === u && g.sifre === p);
+
+                if (garson) {
+                    sessionStorage.setItem('garson_auth', 'true');
+                    sessionStorage.setItem('aktif_garson', garson.isim);
+                    window.location.href = 'masalar.html';
+                } else {
+                    error.style.display = 'block';
+                    error.innerText = "Hatalı garson adı veya şifre!";
+                }
+            }
+        }
+
+        // Enter tuşu ile giriş yapma özelliği
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkLogin();
+            }
+        });
+    </script>
+</body>
+</html>
