@@ -616,164 +616,172 @@
         adminGuncelle();
         setInterval(adminGuncelle, 3000);
     </script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+ <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
-<script>
-    // 1. Firebase Yapılandırması
-    const firebaseConfig = {
-        apiKey: "AIzaSyC2ZRTGSOvdJR1sQw1MSTAG94zFHDTZc7g",
-        authDomain: "bogazcafee.firebaseapp.com",
-        projectId: "bogazcafee",
-        storageBucket: "bogazcafee.firebasestorage.app",
-        messagingSenderId: "58612336622",
-        appId: "1:58612336622:web:134c5d3940324920ea38ff",
-        measurementId: "G-X61H9KD691"
-    };
+    <script>
+        // 1. Firebase Yapılandırması
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2ZRTGSOvdJR1sQw1MSTAG94zFHDTZc7g",
+            authDomain: "bogazcafee.firebaseapp.com",
+            projectId: "bogazcafee",
+            storageBucket: "bogazcafee.firebasestorage.app",
+            messagingSenderId: "58612336622",
+            appId: "1:58612336622:web:134c5d3940324920ea38ff",
+            measurementId: "G-X61H9KD691"
+        };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let currentCategoryFilter = 'all';
-    let duzenlenenUrunId = null;
-
-    // --- MASA YÖNETİMİ (FIREBASE) ---
-    function masaEkle() {
-        const masaAd = document.getElementById('yeni-masa-ad').value.trim();
-        if (!masaAd) { alert("Lütfen bir masa adı girin!"); return; }
-        
-        db.ref('kafe_masalari').push(masaAd).then(() => {
-            document.getElementById('yeni-masa-ad').value = "";
-        });
-    }
-
-    function masaSil(key) {
-        if (confirm("Masa silinecektir. Emin misiniz?")) {
-            db.ref('kafe_masalari/' + key).remove();
+        // Firebase Başlatma
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
-    }
+        const db = firebase.database();
 
-    // --- GARSON YÖNETİMİ (FIREBASE) ---
-    function garsonEkle() {
-        const isim = document.getElementById('yeni-garson-ad').value.trim();
-        const sifre = document.getElementById('yeni-garson-sifre').value.trim();
-        if (!isim || !sifre) { alert("Garson adı ve şifre boş bırakılamaz!"); return; }
-        
-        db.ref('kafe_garsonlari').push({ isim, sifre }).then(() => {
-            document.getElementById('yeni-garson-ad').value = "";
-            document.getElementById('yeni-garson-sifre').value = "";
-        });
-    }
+        let currentCategoryFilter = 'all';
 
-    function garsonSil(key) {
-        if(confirm("Garsonu silmek istediğinize emin misiniz?")) {
-            db.ref('kafe_garsonlari/' + key).remove();
-        }
-    }
-
-    // --- ÜRÜN YÖNETİMİ (FIREBASE) ---
-    function urunEkle() {
-        const ad = document.getElementById('yeni-urun-ad').value;
-        const fiyat = document.getElementById('yeni-urun-fiyat').value;
-        const kategori = document.getElementById('yeni-urun-kategori').value;
-        const resim = document.getElementById('yeni-urun-resim').value;
-        
-        if(!ad || !fiyat) { alert("Ad ve fiyat girin!"); return; }
-
-        db.ref('yonetilen_urunler').push({
-            ad, 
-            fiyat: parseFloat(fiyat), 
-            kategori, 
-            resim: resim || 'images/default.png'
-        }).then(() => {
-            formuSifirla();
-        });
-    }
-
-    function urunSil(key) {
-        if(confirm("Silinsin mi?")) {
-            db.ref('yonetilen_urunler/' + key).remove();
-        }
-    }
-
-    // --- CANLI GÜNCELLEME VE LİSTELEME ---
-    function adminGuncelle() {
-        // Masaları Dinle
-        db.ref('kafe_masalari').on('value', snapshot => {
-            const container = document.getElementById('admin-tables-container');
-            container.innerHTML = "";
-            snapshot.forEach(child => {
-                const masaAd = child.val();
-                const key = child.key;
-                container.innerHTML += `
-                    <div class="admin-masa-kutu">
-                        <button class="btn-masa-sil" onclick="masaSil('${key}')"><i class="fas fa-trash-alt"></i></button>
-                        <i class="fas fa-chair"></i>
-                        <span style="font-weight:bold;">${masaAd}</span>
-                        <span style="font-size:0.9rem; margin-top:5px;">Boş</span>
-                    </div>`;
+        // --- MASA YÖNETİMİ (FIREBASE) ---
+        function masaEkle() {
+            const masaAd = document.getElementById('yeni-masa-ad').value.trim();
+            if (!masaAd) { alert("Lütfen bir masa adı girin!"); return; }
+            
+            db.ref('kafe_masalari').push(masaAd).then(() => {
+                document.getElementById('yeni-masa-ad').value = "";
             });
-        });
+        }
 
-        // Ürünleri Dinle
-        db.ref('yonetilen_urunler').on('value', snapshot => {
-            const listBody = document.getElementById('admin-urun-listesi-body');
-            listBody.innerHTML = "";
-            snapshot.forEach(child => {
-                const u = child.val();
-                const key = child.key;
-                if (currentCategoryFilter === 'all' || u.kategori === currentCategoryFilter) {
+        function masaSil(key) {
+            if (confirm("Masa silinecektir. Emin misiniz?")) {
+                db.ref('kafe_masalari/' + key).remove();
+            }
+        }
+
+        // --- GARSON YÖNETİMİ (FIREBASE) ---
+        function garsonEkle() {
+            const isim = document.getElementById('yeni-garson-ad').value.trim();
+            const sifre = document.getElementById('yeni-garson-sifre').value.trim();
+            if (!isim || !sifre) { alert("Garson adı ve şifre boş bırakılamaz!"); return; }
+            
+            db.ref('kafe_garsonlari').push({ isim, sifre }).then(() => {
+                document.getElementById('yeni-garson-ad').value = "";
+                document.getElementById('yeni-garson-sifre').value = "";
+            });
+        }
+
+        function garsonSil(key) {
+            if(confirm("Garsonu silmek istediğinize emin misiniz?")) {
+                db.ref('kafe_garsonlari/' + key).remove();
+            }
+        }
+
+        // --- ÜRÜN YÖNETİMİ (FIREBASE) ---
+        function urunEkle() {
+            const ad = document.getElementById('yeni-urun-ad').value;
+            const fiyat = document.getElementById('yeni-urun-fiyat').value;
+            const kategori = document.getElementById('yeni-urun-kategori').value;
+            const resim = document.getElementById('yeni-urun-resim').value;
+            
+            if(!ad || !fiyat) { alert("Ad ve fiyat girin!"); return; }
+
+            db.ref('yonetilen_urunler').push({
+                ad, 
+                fiyat: parseFloat(fiyat), 
+                kategori, 
+                resim: resim || 'images/default.png'
+            }).then(() => {
+                alert("Ürün başarıyla buluta eklendi!");
+                formuSifirla();
+            });
+        }
+
+        function urunSil(key) {
+            if(confirm("Silinsin mi?")) {
+                db.ref('yonetilen_urunler/' + key).remove();
+            }
+        }
+
+        // --- CANLI GÜNCELLEME VE LİSTELEME ---
+        function adminGuncelle() {
+            // Masaları Dinle
+            db.ref('kafe_masalari').on('value', snapshot => {
+                const container = document.getElementById('admin-tables-container');
+                if(!container) return;
+                container.innerHTML = "";
+                snapshot.forEach(child => {
+                    const masaAd = child.val();
+                    const key = child.key;
+                    container.innerHTML += `
+                        <div class="admin-masa-kutu">
+                            <button class="btn-masa-sil" onclick="masaSil('${key}')"><i class="fas fa-trash-alt"></i></button>
+                            <i class="fas fa-chair"></i>
+                            <span style="font-weight:bold;">${masaAd}</span>
+                            <span style="font-size:0.9rem; margin-top:5px;">Boş</span>
+                        </div>`;
+                });
+            });
+
+            // Ürünleri Dinle
+            db.ref('yonetilen_urunler').on('value', snapshot => {
+                const listBody = document.getElementById('admin-urun-listesi-body');
+                if(!listBody) return;
+                listBody.innerHTML = "";
+                snapshot.forEach(child => {
+                    const u = child.val();
+                    const key = child.key;
+                    if (currentCategoryFilter === 'all' || u.kategori === currentCategoryFilter) {
+                        listBody.innerHTML += `
+                            <tr>
+                                <td>${u.ad}</td>
+                                <td>${u.fiyat} TL</td>
+                                <td>
+                                    <button class="btn-sil" onclick="urunSil('${key}')">Sil</button>
+                                </td>
+                            </tr>`;
+                    }
+                });
+            });
+
+            // Garsonları Dinle
+            db.ref('kafe_garsonlari').on('value', snapshot => {
+                const listBody = document.getElementById('admin-garson-listesi');
+                if(!listBody) return;
+                listBody.innerHTML = "";
+                snapshot.forEach(child => {
+                    const g = child.val();
+                    const key = child.key;
                     listBody.innerHTML += `
                         <tr>
-                            <td>${u.ad}</td>
-                            <td>${u.fiyat} TL</td>
-                            <td>
-                                <button class="btn-sil" onclick="urunSil('${key}')">Sil</button>
-                            </td>
+                            <td>${g.isim}</td>
+                            <td>****</td>
+                            <td><button onclick="garsonSil('${key}')" class="btn-sil">Sil</button></td>
                         </tr>`;
-                }
+                });
             });
-        });
-
-        // Garsonları Dinle
-        db.ref('kafe_garsonlari').on('value', snapshot => {
-            const listBody = document.getElementById('admin-garson-listesi');
-            listBody.innerHTML = "";
-            snapshot.forEach(child => {
-                const g = child.val();
-                const key = child.key;
-                listBody.innerHTML += `
-                    <tr>
-                        <td>${g.isim}</td>
-                        <td>****</td>
-                        <td><button onclick="garsonSil('${key}')" class="btn-sil">Sil</button></td>
-                    </tr>`;
-            });
-        });
-    }
-
-    function setCategoryFilter(cat, btn) {
-        currentCategoryFilter = cat;
-        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        adminGuncelle();
-    }
-
-    function formuSifirla() {
-        document.getElementById('yeni-urun-ad').value = "";
-        document.getElementById('yeni-urun-fiyat').value = "";
-        document.getElementById('yeni-urun-resim').value = "";
-    }
-
-    function adminLogout() {
-        if (confirm("Çıkış yapılsın mı?")) {
-            sessionStorage.removeItem('admin_auth');
-            window.location.href = 'index.html';
         }
-    }
 
-    // Başlat
-    adminGuncelle();
-</script>
+        function setCategoryFilter(cat, btn) {
+            currentCategoryFilter = cat;
+            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            adminGuncelle();
+        }
+
+        function formuSifirla() {
+            document.getElementById('yeni-urun-ad').value = "";
+            document.getElementById('yeni-urun-fiyat').value = "";
+            document.getElementById('yeni-urun-resim').value = "";
+        }
+
+        function adminLogout() {
+            if (confirm("Çıkış yapılsın mı?")) {
+                sessionStorage.removeItem('admin_auth');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Başlat
+        adminGuncelle();
+    </script>
+</body>
+</html>
 </body>
 </html>
