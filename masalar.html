@@ -69,7 +69,7 @@
             box-shadow: 0 0 20px rgba(255, 77, 77, 0.3);
         }
 
-        /* Yeni sipariş geldiğinde yanıp sönme efekti */
+        /* Yeni sipariş geldiğinde (Müşteri ekranından) yanıp sönme efekti */
         .masa-kutu.bekliyor {
             animation: pulse-border 1.5s infinite;
         }
@@ -184,15 +184,13 @@
 
         .modal-toplam { font-size: 22px; font-weight: bold; color: #fff; }
         .modal-toplam span { color: #ff4d4d; }
-        .modal-saat { color: #666; font-size: 14px; margin-top: 5px; }
 
         .siparis-onay-alan { display: none; border-top: 1px solid #444; margin-top: 15px; padding-top: 15px; width: 100%; }
         .onay-butonlar { display: flex; gap: 15px; justify-content: center; }
         .btn-aksiyon { background: transparent; border: 2px solid; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: 0.2s; }
         .btn-aksiyon.tamam { color: #2ecc71; border-color: #2ecc71; }
         .btn-aksiyon.iptal { color: #ff4d4d; border-color: #ff4d4d; }
-        .btn-temizle { margin-top: 20px; padding: 10px 18px; background: #ff4d4d; border: none; color: white; border-radius: 12px; cursor: pointer; display: none; font-size: 14px; font-weight: bold; }
-        
+
         .header-top-buttons {
             display: flex;
             justify-content: flex-end;
@@ -215,13 +213,27 @@
         .ana-sayfa-btn { margin-top: 60px; display: inline-block; padding: 12px 35px; color: #ff4d4d; text-decoration: none; border: 2px solid #ff4d4d; border-radius: 30px; font-weight: bold; transition: 0.3s; }
         .ana-sayfa-btn:hover { background: #ff4d4d; color: white; }
 
+        .btn-ek-siparis {
+            width: 100%;
+            padding: 12px;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+        }
+        .btn-ek-siparis:hover { opacity: 0.8; }
+
         @media (max-width: 900px) { .container { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
 <body>
 
     <script>
-        // YENİ: Garson Yetki Kontrolü
+        // Garson Yetki Kontrolü
         if (sessionStorage.getItem('garson_auth') !== 'true') {
             window.location.href = 'login.html?to=garson';
         }
@@ -233,7 +245,7 @@
 
     <div class="header">
         <h1><i class="fas fa-utensils"></i> GARSON PANELİ</h1>
-        <p id="garson-karsilama">Hoş geldiniz! Siparişleri anlık olarak yönetebilirsiniz.</p>
+        <p id="garson-karsilama">Hoş geldiniz!</p>
     </div>
 
     <div class="container" id="tables-container"></div>
@@ -247,17 +259,19 @@
             <div id="modal-urunler" class="modal-urun-listesi"></div>
             <div class="modal-alt">
                 <div class="modal-toplam">Toplam: <span id="modal-toplam-tutar">0.00</span> TL</div>
-                <div id="modal-siparis-saati" class="modal-saat">Sipariş Saati: 00:00</div>
+                <button id="modal-ek-siparis-btn" class="btn-ek-siparis">
+                    <i class="fas fa-plus"></i> Ek Sipariş Al
+                </button>
             </div>
         </div>
     </div>
 
-    <a href="index.html" class="ana-sayfa-btn">Ana Sayfaya Dön</a>
+    <a href="index.html" class="ana-sayfa-btn">Menüye Git</a>
 
     <script>
         const aktifGarson = sessionStorage.getItem('aktif_garson');
         if (aktifGarson) {
-            document.getElementById('garson-karsilama').innerText = "Hoş geldin " + aktifGarson + "! Siparişleri yönetmeye hazırsın.";
+            document.getElementById('garson-karsilama').innerText = "Hoş geldin " + aktifGarson + "! Siparişleri yönetebilirsin.";
         }
 
         function logout() {
@@ -266,6 +280,7 @@
             window.location.href = 'index.html';
         }
 
+        // Dolu masaya tıklandığında sipariş detaylarını gösterir
         function modalAc(siparis, masaID, masaElement) {
             document.querySelectorAll('.masa-kutu').forEach(m => m.classList.remove('aktif-detay'));
             masaElement.classList.add('aktif-detay');
@@ -273,7 +288,11 @@
             document.getElementById('siparis-modal').style.display = "block";
             document.getElementById('modal-masa-adi').innerText = masaID + " Detayı";
             document.getElementById('modal-toplam-tutar').innerText = siparis.total.toFixed(2);
-            document.getElementById('modal-siparis-saati').innerText = "Son Sipariş: " + siparis.time;
+
+            // Dolu masaya yeni ürün ekleme yönlendirmesi
+            document.getElementById('modal-ek-siparis-btn').onclick = function() {
+                window.location.href = "index.html?masa=" + encodeURIComponent(masaID);
+            };
 
             const liste = document.getElementById('modal-urunler');
             liste.innerHTML = ""; 
@@ -293,6 +312,7 @@
 
         window.onclick = function(e) { if (e.target == document.getElementById('siparis-modal')) modalKapat(); }
 
+        // Masaları ve durumlarını anlık güncelleyen ana fonksiyon
         function panelGuncelle() {
             const container = document.getElementById('tables-container');
             const orders = JSON.parse(localStorage.getItem("orders")) || [];
@@ -306,48 +326,52 @@
 
             masalar.forEach(masaID => {
                 const siparis = orders.find(o => o.table.trim() === masaID.trim());
-                
                 const masaDiv = document.createElement('div');
                 
-                // Statüye göre ekstra class ekle (parlama efekti için)
                 let extraClass = "";
+                // Sadece müşteri ekranından gelenler 'bekliyor' statüsündedir ve parlar
                 if (siparis && siparis.status === "bekliyor") {
                     extraClass = " bekliyor";
                 }
 
                 masaDiv.className = siparis ? 'masa-kutu dolu' + extraClass : 'masa-kutu';
-                masaDiv.setAttribute('data-id', masaID);
                 
                 let gecenSureHTML = "";
                 if (siparis && siparis.startTime) {
                     const fark = Date.now() - siparis.startTime;
                     const dk = Math.floor(fark / 60000);
-                    const sn = Math.floor((fark % 60000) / 1000);
-                    gecenSureHTML = `${dk} dk ${sn} sn`;
+                    gecenSureHTML = `${dk} dk`;
                 }
 
                 masaDiv.innerHTML = `
                     <i class="fas fa-chair"></i>
                     <span class="masa-no">${masaID}</span>
-                    <span class="durum">${siparis ? (siparis.status === "bekliyor" ? "YENİ SİPARİŞ" : "DOLU") : "Boş"}</span>
+                    <span class="durum">${siparis ? (siparis.status === "bekliyor" ? "ONAY BEKLİYOR" : "DOLU") : "Boş"}</span>
                     <span class="gecen-sure">${gecenSureHTML}</span>
-                    <div class="siparis-onay-alan" style="display: ${siparis && siparis.status === 'bekliyor' ? 'block' : 'none'}">
-                        <div class="onay-butonlar">
-                            <button class="btn-aksiyon tamam" onclick="siparisOnayla(event, '${masaID}')">✓</button>
-                            <button class="btn-aksiyon iptal" onclick="siparisIptal(event, '${masaID}')">X</button>
+                    ${siparis && siparis.status === 'bekliyor' ? `
+                        <div class="siparis-onay-alan" style="display: block">
+                            <div class="onay-butonlar">
+                                <button class="btn-aksiyon tamam" onclick="siparisOnayla(event, '${masaID}')">✓</button>
+                                <button class="btn-aksiyon iptal" onclick="siparisIptal(event, '${masaID}')">X</button>
+                            </div>
                         </div>
-                    </div>
-                    <button class="btn-temizle" style="display: none" onclick="masayiBosalt(event, '${masaID}')">Hesabı Kapat</button>
+                    ` : ''}
                 `;
 
-                if (siparis) {
-                    masaDiv.onclick = () => modalAc(siparis, masaID, masaDiv);
-                }
+                // Tıklama Mantığı: Boşsa direkt menüye, doluysa detaya gider
+                masaDiv.onclick = function() {
+                    if (siparis) {
+                        modalAc(siparis, masaID, masaDiv);
+                    } else {
+                        window.location.href = "index.html?masa=" + encodeURIComponent(masaID);
+                    }
+                };
 
                 container.appendChild(masaDiv);
             });
         }
 
+        // Müşteriden gelen bekleyen siparişleri onaylar
         function siparisOnayla(event, masaID) {
             event.stopPropagation();
             let orders = JSON.parse(localStorage.getItem("orders")) || [];
@@ -356,20 +380,10 @@
             panelGuncelle();
         }
 
+        // Siparişi iptal eder veya masayı boşaltır
         function siparisIptal(event, masaID) {
             event.stopPropagation();
             if(confirm(masaID + " siparişi iptal edilsin mi?")) {
-                let orders = JSON.parse(localStorage.getItem("orders")) || [];
-                // Not: Sipariş tamamen silinmez, sadece bekleyen durumdan çıkarılırsa daha güvenli olur
-                // Ancak senin yapında direkt filtreleme var, bozmadan devam ediyorum
-                localStorage.setItem("orders", JSON.stringify(orders.filter(o => o.table.trim() !== masaID.trim())));
-                panelGuncelle();
-            }
-        }
-
-        function masayiBosalt(event, masaID) {
-            event.stopPropagation(); 
-            if(confirm(masaID + " hesabı kapatılsın mı?")) {
                 let orders = JSON.parse(localStorage.getItem("orders")) || [];
                 localStorage.setItem("orders", JSON.stringify(orders.filter(o => o.table.trim() !== masaID.trim())));
                 panelGuncelle();
@@ -377,7 +391,7 @@
         }
 
         panelGuncelle();
-        setInterval(panelGuncelle, 1000);
+        setInterval(panelGuncelle, 3000); // Her 3 saniyede bir masa durumlarını kontrol et
     </script>
 </body>
 </html>
